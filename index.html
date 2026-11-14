@@ -24,11 +24,7 @@
 
     /* --- TOAST NOTIFICATIONS --- */
     #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-    .toast {
-      background: #fff; border: 3px solid var(--border-color); border-radius: 8px;
-      padding: 15px 20px; font-weight: 800; color: var(--text-main);
-      box-shadow: 4px 4px 0 var(--border-color); animation: slideIn 0.3s ease-out;
-    }
+    .toast { background: #fff; border: 3px solid var(--border-color); border-radius: 8px; padding: 15px 20px; font-weight: 800; color: var(--text-main); box-shadow: 4px 4px 0 var(--border-color); animation: slideIn 0.3s ease-out; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
     /* --- CONFETTI CANVAS --- */
@@ -40,7 +36,7 @@
     @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     .auth-box h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
     .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
-    .auth-box input { margin-bottom: 12px; }
+    .auth-box input { width:100%; padding:12px; border:2px solid #ccc; border-radius:8px; margin-bottom:10px; font-family:inherit; font-size:16px; outline:none;}
     .auth-box button { width: 100%; padding: 14px; background: var(--text-main); color: #fff; border: none; border-radius: 8px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; }
     .auth-box button:hover { background: #2a5041; transform: translateY(-2px); }
 
@@ -55,7 +51,8 @@
       padding: 15px 10px; display: flex; flex-direction: column; gap: 15px;
       box-shadow: 5px 5px 0 rgba(0,0,0,0.1); z-index: 100;
     }
-    .logo-btn { width: 50px; height: 50px; border-radius: 12px; background: var(--accent-yellow); border: 3px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; transition: transform 0.1s; user-select: none; }
+    .logo-btn { width: 50px; height: 50px; border-radius: 12px; background: #fff; border: 3px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; user-select: none; overflow: hidden; padding: 4px;}
+    .logo-btn img { width: 100%; height: 100%; object-fit: contain; }
     .logo-btn:active { transform: scale(0.9); }
     
     .channel-nav { display: flex; flex-direction: column; gap: 8px; }
@@ -65,7 +62,8 @@
     .channel::after { content: attr(data-tooltip); position: absolute; left: 60px; background: var(--text-main); color: #fff; font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: 4px; opacity: 0; pointer-events: none; transition: 0.2s; white-space: nowrap; transform: translateX(-10px); }
     .channel:hover::after { opacity: 1; transform: translateX(0); }
 
-    .user-badge { width: 50px; height: 50px; border-radius: 50%; background: var(--accent-green); border: 3px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; cursor: pointer; }
+    .user-badge { width: 50px; height: 50px; border-radius: 50%; background: var(--accent-green); border: 3px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; cursor: pointer; overflow: hidden; padding: 2px; }
+    .user-badge img { width: 100%; height: 100%; object-fit: contain; }
 
     /* MAIN CONTENT */
     .main-content { margin-left: 110px; height: 100%; display: flex; flex-direction: column; }
@@ -99,7 +97,8 @@
 
     .post-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
     .post-user { display: flex; align-items: center; gap: 12px; }
-    .post-avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; border: 3px solid var(--border-color); }
+    .post-avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; border: 3px solid var(--border-color); background: #fff; overflow: hidden; padding: 2px; }
+    .post-avatar img { width: 100%; height: 100%; object-fit: contain; }
     .post-author { font-weight: 800; font-size: 18px; }
     .post-date { font-size: 13px; color: var(--text-muted); font-weight: 600; }
     .post-content { font-size: 16px; line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap; color: var(--text-main); }
@@ -153,8 +152,8 @@
     <div class="auth-box">
       <h1>WARS</h1>
       <p>Enter a username and password to join.</p>
-      <input type="text" id="auth-user" placeholder="Username" maxlength="20" style="width:100%; padding:12px; border:2px solid #ccc; border-radius:8px; margin-bottom:10px;">
-      <input type="password" id="auth-pass" placeholder="Password" style="width:100%; padding:12px; border:2px solid #ccc; border-radius:8px; margin-bottom:20px;">
+      <input type="text" id="auth-user" placeholder="Username" maxlength="20">
+      <input type="password" id="auth-pass" placeholder="Password">
       <button onclick="login()">Enter the Hub</button>
     </div>
   </div>
@@ -174,7 +173,10 @@
   <div id="app-container">
     <!-- FLOATING SIDEBAR -->
     <aside class="floating-sidebar">
-      <div class="logo-btn" onclick="spinLogo()">⚔️</div>
+      <div class="logo-btn" onclick="spinLogo()">
+        <img src="assets/wars_fr_home_upright.png" alt="W" onerror="this.style.display='none'; this.parentElement.innerText='⚔️'">
+      </div>
+      
       <div class="channel-nav">
         <div class="channel active" data-channel="announcements" data-tooltip="Announcements" onclick="switchChannel('announcements')">📢</div>
         <div class="channel" data-channel="guides" data-tooltip="Guides" onclick="switchChannel('guides')">📖</div>
@@ -182,7 +184,10 @@
         <div class="channel" data-channel="lfg" data-tooltip="LFG" onclick="switchChannel('lfg')">🎮</div>
         <div class="channel" data-channel="bugs" data-tooltip="Bug Reports" onclick="switchChannel('bugs')">🐛</div>
       </div>
-      <div class="user-badge" onclick="openSettings()" title="Settings">⚙️</div>
+
+      <div class="user-badge" onclick="openSettings()" title="Settings">
+        <img src="assets/default.png" alt="User" onerror="this.style.display='none'; this.parentElement.innerText='U'">
+      </div>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -197,16 +202,16 @@
         <!-- SLIDER (Only in Announcements) -->
         <div class="slider-wrapper" id="main-slider">
           <div class="slide active">
-            <img src="assets/mc1.jpg" alt="MC 1" onerror="this.src='https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1000'">
+            <img src="assets/1765.png" alt="1765" onerror="this.src='https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1000'">
             <div class="slide-text">🌲 Welcome to the WARS Community!</div>
           </div>
           <div class="slide">
-            <img src="assets/mc2.jpg" alt="MC 2" onerror="this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1000'">
-            <div class="slide-text">⚔️ Epic 3D Battles</div>
+            <img src="assets/5114.png" alt="5114" onerror="this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1000'">
+            <div class="slide-text">🌊 Explore the Deep</div>
           </div>
           <div class="slide">
-            <img src="assets/mc4.jpg" alt="MC 4" onerror="this.src='https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=1000'">
-            <div class="slide-text">🌊 Explore the Deep</div>
+            <img src="assets/hiddendepths.png" alt="hiddendepths" onerror="this.src='https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=1000'">
+            <div class="slide-text">⚔️ Epic Battles Await</div>
           </div>
         </div>
 
