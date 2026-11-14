@@ -19,29 +19,37 @@
       --accent-red: #FF6B6B;
       --accent-green: #A8FF9F;
       --border-color: #1A362B;
-      --sidebar-bg: #E8EAE6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    
     body { 
       background-color: var(--bg); color: var(--text-main); overflow: hidden;
       background-image: 
         linear-gradient(rgba(26, 54, 43, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(26, 54, 43, 0.03) 1px, transparent 1px);
       background-size: 20px 20px;
+      cursor: crosshair; /* Fun cursor */
+    }
+
+    /* --- CONFETTI CANVAS --- */
+    #confetti-canvas {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9999;
     }
 
     /* --- AUTHENTICATION OVERLAY --- */
     #auth-overlay {
-      position: fixed; inset: 0; background: rgba(26, 54, 43, 0.9);
+      position: fixed; inset: 0; background: rgba(26, 54, 43, 0.95);
       z-index: 10000; display: flex; align-items: center; justify-content: center;
       backdrop-filter: blur(10px);
     }
     .auth-box {
       background: var(--bg); border: 4px solid var(--border-color); border-radius: 16px;
       padding: 40px; width: 90%; max-width: 400px; text-align: center;
-      box-shadow: 8px 8px 0 var(--accent-yellow); animation: slideUp 0.5s;
+      box-shadow: 8px 8px 0 var(--accent-yellow); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+    @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    
     .auth-box h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
     .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
     .auth-box input { margin-bottom: 12px; }
@@ -50,174 +58,184 @@
       border: none; border-radius: 8px; font-weight: 800; font-size: 16px; cursor: pointer;
       transition: 0.2s;
     }
-    .auth-box button:hover { background: #2a5041; transform: translateY(-2px); }
+    .auth-box button:hover { background: #2a5041; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
     /* --- APP LAYOUT --- */
-    #app-container { display: none; height: 100vh; width: 100vw; }
+    #app-container { display: none; height: 100vh; width: 100vw; position: relative; }
 
-    /* SIDEBAR (Discord Style) */
-    .sidebar {
-      width: 260px; background: var(--sidebar-bg); border-right: 3px solid var(--border-color);
-      display: flex; flex-direction: column; height: 100%;
+    /* FLOATING GLASS SIDEBAR */
+    .floating-sidebar {
+      position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px);
+      border: 3px solid var(--border-color); border-radius: 20px;
+      padding: 15px 10px; display: flex; flex-direction: column; gap: 15px;
+      box-shadow: 5px 5px 0 rgba(0,0,0,0.1); z-index: 100;
+      transition: width 0.3s;
     }
-    .server-header {
-      padding: 20px; border-bottom: 3px solid var(--border-color);
-      display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px;
+    .logo-btn {
+      width: 50px; height: 50px; border-radius: 12px; background: var(--accent-yellow);
+      border: 3px solid var(--border-color); display: flex; align-items: center; justify-content: center;
+      font-size: 24px; cursor: pointer; transition: transform 0.1s; user-select: none;
     }
-    .server-header img { width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--border-color); object-fit: contain;}
+    .logo-btn:active { transform: scale(0.9); }
     
-    .channel-list { flex: 1; overflow-y: auto; padding: 20px 10px; }
-    .channel-category { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin: 15px 10px 5px; letter-spacing: 1px;}
+    .channel-nav { display: flex; flex-direction: column; gap: 8px; }
     .channel {
-      padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600;
-      color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-bottom: 2px;
-      transition: 0.1s;
+      width: 50px; height: 50px; border-radius: 12px; border: 2px solid transparent;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+      cursor: pointer; transition: 0.2s; position: relative;
     }
-    .channel:hover { background: rgba(26, 54, 43, 0.05); color: var(--text-main); }
-    .channel.active { background: var(--accent-blue); color: var(--text-main); border: 2px solid var(--border-color); }
+    .channel:hover { background: rgba(0,0,0,0.05); }
+    .channel.active { background: var(--accent-blue); border-color: var(--border-color); }
+    .channel::after {
+      content: attr(data-tooltip); position: absolute; left: 60px;
+      background: var(--text-main); color: #fff; font-size: 12px; font-weight: 800;
+      padding: 4px 8px; border-radius: 4px; opacity: 0; pointer-events: none; transition: 0.2s;
+      white-space: nowrap; transform: translateX(-10px);
+    }
+    .channel:hover::after { opacity: 1; transform: translateX(0); }
 
-    .user-panel {
-      padding: 15px; background: #fff; border-top: 3px solid var(--border-color);
-      display: flex; align-items: center; justify-content: space-between;
+    .user-badge {
+      width: 50px; height: 50px; border-radius: 50%; background: var(--accent-green);
+      border: 3px solid var(--border-color); display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px; cursor: pointer;
     }
-    .user-info { display: flex; align-items: center; gap: 10px; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-yellow); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 800; }
-    .user-name { font-weight: 800; font-size: 14px; }
-    .settings-cog {
-      font-size: 20px; cursor: pointer; transition: transform 0.3s;
-    }
-    .settings-cog:hover { transform: rotate(90deg); }
 
     /* MAIN CONTENT */
     .main-content {
-      flex: 1; display: flex; flex-direction: column; height: 100%; position: relative;
+      margin-left: 100px; height: 100%; display: flex; flex-direction: column;
     }
-    .channel-header {
-      padding: 20px 30px; border-bottom: 3px solid var(--border-color);
-      display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.5);
+    .header {
+      padding: 25px 40px; display: flex; justify-content: space-between; align-items: center;
     }
-    .channel-header h2 { font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-    
+    .header h2 { font-size: 32px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
     .play-btn {
-      background: var(--accent-blue); color: var(--text-main); padding: 10px 20px;
-      border-radius: 20px; text-decoration: none; font-weight: 800; border: 2px solid var(--border-color);
-      transition: 0.2s; box-shadow: 2px 2px 0 var(--border-color);
+      background: var(--accent-blue); color: var(--text-main); padding: 12px 24px;
+      border-radius: 30px; text-decoration: none; font-weight: 800; border: 3px solid var(--border-color);
+      transition: 0.2s; box-shadow: 3px 3px 0 var(--border-color); font-size: 16px;
     }
-    .play-btn:hover { transform: translateY(-2px); box-shadow: 4px 4px 0 var(--border-color); background: #fff;}
+    .play-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--border-color); background: #fff; }
 
     .feed-area {
-      flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 20px;
+      flex: 1; overflow-y: auto; padding: 0 40px 40px; display: flex; flex-direction: column; gap: 25px;
+      max-width: 1000px; margin: 0 auto; width: 100%;
     }
 
     /* --- SLIDER --- */
     .slider-wrapper {
-      width: 100%; border-radius: 16px; overflow: hidden; border: 3px solid var(--border-color);
-      position: relative; aspect-ratio: 21 / 9; box-shadow: 4px 4px 0 var(--border-color); margin-bottom: 20px;
+      width: 100%; border-radius: 16px; overflow: hidden; border: 4px solid var(--border-color);
+      position: relative; aspect-ratio: 21 / 9; box-shadow: 6px 6px 0 var(--accent-blue); margin-bottom: 10px;
       background: #000;
     }
-    .slide {
-      position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s;
-    }
+    .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s; }
     .slide.active { opacity: 1; }
     .slide img { width: 100%; height: 100%; object-fit: cover; }
     .slide-text {
       position: absolute; bottom: 20px; left: 20px; background: var(--accent-yellow);
-      padding: 8px 16px; border: 3px solid var(--border-color); border-radius: 8px;
-      font-weight: 800; font-size: 18px;
+      padding: 10px 20px; border: 3px solid var(--border-color); border-radius: 8px;
+      font-weight: 800; font-size: 20px; box-shadow: 3px 3px 0 var(--border-color);
     }
+
+    /* --- POST FORM --- */
+    .post-form {
+      background: #fff; border: 3px solid var(--border-color); border-radius: 16px;
+      padding: 20px; box-shadow: 5px 5px 0 rgba(0,0,0,0.1); transition: 0.2s;
+    }
+    .post-form:focus-within { box-shadow: 7px 7px 0 var(--accent-yellow); transform: translate(-2px, -2px); }
+    .post-form input, .post-form textarea {
+      width: 100%; padding: 14px; border: 2px solid #E0E0E0; border-radius: 8px;
+      margin-bottom: 12px; font-family: inherit; font-size: 16px; outline: none; background: var(--bg);
+      transition: 0.2s;
+    }
+    .post-form input:focus, .post-form textarea:focus { border-color: var(--text-main); background: #fff; }
+    .post-form button {
+      background: var(--text-main); color: #fff; border: none; padding: 12px 30px;
+      border-radius: 8px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s;
+    }
+    .post-form button:hover { background: #2a5041; transform: scale(1.05); }
 
     /* --- POSTS --- */
-    .post-form {
-      background: #fff; border: 3px solid var(--border-color); border-radius: 12px;
-      padding: 20px; box-shadow: 4px 4px 0 var(--border-color); margin-bottom: 20px;
-    }
-    .post-form input, .post-form textarea, .post-form select {
-      width: 100%; padding: 12px; border: 2px solid #E0E0E0; border-radius: 8px;
-      margin-bottom: 12px; font-family: inherit; font-size: 15px; outline: none; background: var(--bg);
-    }
-    .post-form input:focus, .post-form textarea:focus { border-color: var(--text-main); }
-    .post-form button {
-      background: var(--text-main); color: #fff; border: none; padding: 12px 24px;
-      border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s;
-    }
-    .post-form button:hover { background: #2a5041; }
-
     .post-card {
-      background: #fff; border: 3px solid var(--border-color); border-radius: 12px;
-      padding: 20px; box-shadow: 4px 4px 0 var(--border-color); animation: slideUp 0.4s ease-out forwards;
-      opacity: 0; transform: translateY(20px);
+      background: #fff; border: 3px solid var(--border-color); border-radius: 16px;
+      padding: 25px; box-shadow: 5px 5px 0 rgba(0,0,0,0.1); animation: slideUp 0.4s ease-out forwards;
+      opacity: 0; transform: translateY(20px); transition: transform 0.2s, box-shadow 0.2s;
     }
+    .post-card:hover { transform: translateY(-4px) rotate(0.5deg); box-shadow: 8px 8px 0 var(--border-color); }
     @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
 
     .post-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-    .post-user { display: flex; align-items: center; gap: 10px; }
-    .post-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border-color); }
-    .post-author { font-weight: 800; font-size: 16px; }
-    .post-date { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-    .post-content { font-size: 15px; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; }
+    .post-user { display: flex; align-items: center; gap: 12px; }
+    .post-avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; border: 3px solid var(--border-color); }
+    .post-author { font-weight: 800; font-size: 18px; }
+    .post-date { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+    .post-content { font-size: 16px; line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap; color: var(--text-main); }
 
     /* INTERACTIONS */
-    .post-actions { display: flex; gap: 15px; border-top: 2px solid #E0E0E0; padding-top: 15px; }
+    .post-actions { display: flex; gap: 12px; border-top: 2px solid #F0F0F0; padding-top: 15px; }
     .action-btn {
       background: var(--bg); border: 2px solid #E0E0E0; border-radius: 20px;
-      padding: 6px 12px; font-size: 14px; font-weight: 800; cursor: pointer;
-      display: flex; align-items: center; gap: 6px; transition: 0.2s; color: var(--text-main);
+      padding: 8px 16px; font-size: 14px; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: 0.2s; color: var(--text-main);
     }
-    .action-btn:hover { border-color: var(--border-color); background: #fff; }
+    .action-btn:hover { border-color: var(--text-main); background: #fff; transform: scale(1.05); }
+    .action-btn:active { transform: scale(0.95); }
     .action-btn.liked { background: var(--accent-green); border-color: var(--border-color); }
     .action-btn.disliked { background: var(--accent-red); border-color: var(--border-color); color: #fff;}
 
     /* COMMENTS SECTION */
-    .comments-section { display: none; margin-top: 15px; border-top: 2px dashed #ccc; padding-top: 15px; }
-    .comment-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
-    .comment-item { background: var(--bg); padding: 10px; border-radius: 8px; border: 2px solid #E0E0E0; }
-    .comment-author { font-weight: 800; font-size: 13px; color: var(--text-main); margin-bottom: 4px; }
-    .comment-text { font-size: 14px; }
+    .comments-section { display: none; margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
+    .comment-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; }
+    .comment-item { background: var(--bg); padding: 12px; border-radius: 8px; border: 2px solid #E0E0E0; }
+    .comment-author { font-weight: 800; font-size: 14px; color: var(--text-main); margin-bottom: 4px; }
+    .comment-text { font-size: 15px; }
     .comment-input-area { display: flex; gap: 10px; }
-    .comment-input-area input { flex: 1; padding: 8px; border: 2px solid #E0E0E0; border-radius: 6px; outline: none; font-family: inherit;}
-    .comment-input-area button { background: var(--text-main); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 800; cursor: pointer; }
+    .comment-input-area input { flex: 1; padding: 10px 15px; border: 2px solid #E0E0E0; border-radius: 20px; outline: none; font-family: inherit; font-size: 14px;}
+    .comment-input-area input:focus { border-color: var(--text-main); }
+    .comment-input-area button { background: var(--text-main); color: #fff; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 800; cursor: pointer; transition: 0.2s;}
+    .comment-input-area button:hover { transform: scale(1.05); }
 
-    /* --- EASTER EGG FLOWER --- */
-    #easter-flower {
-      position: fixed; bottom: -50px; right: 20px; width: 80px; cursor: pointer;
-      transition: transform 0.3s; z-index: 999; opacity: 0;
-    }
-    #easter-flower.show { bottom: 20px; opacity: 1; }
-    #easter-flower:hover { transform: scale(1.1) rotate(10deg); }
-    #silly-pet {
-      position: fixed; bottom: 100px; right: 30px; width: 120px; display: none; z-index: 1000;
-      animation: float 2s infinite alternate;
-    }
-
-    /* --- SETTINGS MODAL --- */
-    #settings-modal {
+    /* --- MODALS --- */
+    .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9000;
       display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
     }
-    .settings-card {
+    .modal-card {
       background: var(--bg); border: 4px solid var(--border-color); border-radius: 16px;
       padding: 30px; width: 90%; max-width: 400px; box-shadow: 8px 8px 0 var(--accent-blue);
+      animation: popIn 0.3s ease-out;
     }
-    .settings-card h2 { font-size: 28px; font-weight: 800; margin-bottom: 20px; }
-    .settings-card p { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-    .settings-card strong { font-family: monospace; font-size: 16px; background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #ccc; }
-    .close-settings { margin-top: 20px; background: var(--accent-red); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%;}
+    .modal-card h2 { font-size: 28px; font-weight: 800; margin-bottom: 20px; }
+    .modal-card p { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+    .modal-card strong { font-family: monospace; font-size: 18px; background: #fff; padding: 4px 8px; border-radius: 6px; border: 2px solid #ccc; }
+    .close-modal { margin-top: 25px; background: var(--accent-red); color: #fff; border: 3px solid var(--border-color); padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; width: 100%; transition: 0.2s;}
+    .close-modal:hover { transform: translateY(-2px); box-shadow: 0 4px 0 var(--border-color); }
+
+    /* CURSOR TRAIL */
+    .trail-dot {
+      position: fixed; width: 10px; height: 10px; background: var(--accent-yellow);
+      border: 2px solid var(--border-color); border-radius: 2px; pointer-events: none; z-index: 9998;
+      transition: transform 0.1s ease-out, opacity 0.5s;
+    }
 
     @media (max-width: 800px) {
-      .sidebar { width: 70px; }
-      .server-header span, .channel span, .user-name, .channel-category { display: none; }
-      .channel { justify-content: center; font-size: 20px; }
-      .main-content { width: calc(100% - 70px); }
+      .floating-sidebar { left: 10px; padding: 10px 5px; gap: 10px; }
+      .channel, .logo-btn, .user-badge { width: 40px; height: 40px; font-size: 18px; }
+      .channel::after { display: none; }
+      .main-content { margin-left: 70px; }
+      .feed-area { padding: 0 15px 20px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- CONFETTI CANVAS -->
+  <canvas id="confetti-canvas"></canvas>
+
   <!-- AUTH OVERLAY -->
   <div id="auth-overlay">
     <div class="auth-box">
       <h1>WARS</h1>
-      <p>Enter a username and password to join. <br><i>(You can see your password later in settings!)</i></p>
+      <p>Enter a username and password to join.</p>
       <input type="text" id="auth-user" placeholder="Username" maxlength="20">
       <input type="password" id="auth-pass" placeholder="Password">
       <button onclick="login()">Enter the Hub</button>
@@ -225,65 +243,44 @@
   </div>
 
   <!-- SETTINGS MODAL -->
-  <div id="settings-modal">
-    <div class="settings-card">
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-card">
       <h2>⚙️ Settings</h2>
       <p>Username: <strong id="set-user"></strong></p>
       <p>Password: <strong id="set-pass"></strong></p>
-      <p style="margin-top: 15px; color: var(--text-muted); font-size: 12px;">Don't share your password with anyone!</p>
-      <button class="close-settings" onclick="closeSettings()">Close</button>
+      <p style="margin-top: 15px; color: var(--text-muted); font-size: 13px;">Keep this secret!</p>
+      <button class="close-modal" onclick="closeSettings()">Close</button>
     </div>
   </div>
 
   <!-- MAIN APP -->
   <div id="app-container">
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="server-header">
-        <img src="assets/sword.png" alt="Logo" onerror="this.style.display='none'">
-        <span>WARS Hub</span>
-      </div>
+    
+    <!-- FLOATING SIDEBAR -->
+    <aside class="floating-sidebar">
+      <div class="logo-btn" onclick="spinLogo()">⚔️</div>
       
-      <div class="channel-list">
-        <div class="channel-category">Information</div>
-        <div class="channel active" data-channel="announcements" onclick="switchChannel('announcements')">
-          <span>📢</span> <span>Announcements</span>
-        </div>
-        <div class="channel" data-channel="guides" onclick="switchChannel('guides')">
-          <span>📖</span> <span>Guides</span>
-        </div>
-        
-        <div class="channel-category">Community</div>
-        <div class="channel" data-channel="general" onclick="switchChannel('general')">
-          <span>💬</span> <span>General Chat</span>
-        </div>
-        <div class="channel" data-channel="lfg" onclick="switchChannel('lfg')">
-          <span>🎮</span> <span>LFG</span>
-        </div>
-        <div class="channel" data-channel="bugs" onclick="switchChannel('bugs')">
-          <span>🐛</span> <span>Bug Reports</span>
-        </div>
+      <div class="channel-nav">
+        <div class="channel active" data-channel="announcements" data-tooltip="Announcements" onclick="switchChannel('announcements')">📢</div>
+        <div class="channel" data-channel="guides" data-tooltip="Guides" onclick="switchChannel('guides')">📖</div>
+        <div class="channel" data-channel="general" data-tooltip="General Chat" onclick="switchChannel('general')">💬</div>
+        <div class="channel" data-channel="lfg" data-tooltip="LFG" onclick="switchChannel('lfg')">🎮</div>
+        <div class="channel" data-channel="bugs" data-tooltip="Bug Reports" onclick="switchChannel('bugs')">🐛</div>
       </div>
 
-      <div class="user-panel">
-        <div class="user-info">
-          <div class="user-avatar" id="sidebar-avatar">U</div>
-          <div class="user-name" id="sidebar-name">User</div>
-        </div>
-        <div class="settings-cog" onclick="openSettings()">⚙️</div>
-      </div>
+      <div class="user-badge" onclick="openSettings()" title="Settings">⚙️</div>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-      <header class="channel-header">
-        <h2 id="channel-title"># Announcements</h2>
+      <header class="header">
+        <h2 id="channel-title">📢 Announcements</h2>
         <a href="https://guns.lol/devvingwars" target="_blank" class="play-btn">Play WARS</a>
       </header>
 
       <div class="feed-area" id="feed-area">
         
-        <!-- SLIDER (Only shows in Announcements) -->
+        <!-- SLIDER -->
         <div class="slider-wrapper" id="main-slider">
           <div class="slide active">
             <img src="assets/mc1.jpg" alt="MC 1" onerror="this.src='https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1000'">
@@ -299,15 +296,13 @@
           </div>
         </div>
 
-        <!-- POST CREATION (Hidden in announcements) -->
+        <!-- POST CREATION -->
         <div class="post-form" id="post-form">
-          <h3 style="margin-bottom:10px; font-weight:800;">Create a Post</h3>
-          <input type="text" id="post-title" placeholder="Title (optional)">
-          <textarea id="post-message" placeholder="What's on your mind?" required></textarea>
-          <button onclick="submitPost()">Post</button>
+          <input type="text" id="post-message" placeholder="Type a message..." required>
+          <button onclick="submitPost()">Send</button>
         </div>
 
-        <div id="feed-container" style="display:flex; flex-direction:column; gap:20px;">
+        <div id="feed-container" style="display:flex; flex-direction:column; gap:25px;">
           <p id="loadingText">Loading posts...</p>
         </div>
 
@@ -315,9 +310,8 @@
     </main>
   </div>
 
-  <!-- EASTER EGG -->
-  <img src="assets/flower.png" id="easter-flower" onclick="hatchEgg()" alt="Mystery Flower" onerror="this.style.display='none'">
-  <img src="assets/mc3.jpg" id="silly-pet" alt="Silly Pet" onerror="this.src='https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif'">
+  <!-- HIDDEN EASTER EGG BLOCK -->
+  <div id="secret-block" style="position:fixed; bottom: -50px; left: 20px; width:40px; height:40px; background: #5D4037; border: 3px solid #000; cursor:pointer; transition: 0.5s; z-index: 9999;" onclick="activateSuperSecret()"></div>
 
   <script>
     // --- CONFIG & AUTH ---
@@ -327,11 +321,12 @@
 
     let currentUser = localStorage.getItem('wars_user');
     let currentPass = localStorage.getItem('wars_pass');
+    let logoClicks = 0;
 
     function login() {
       const user = document.getElementById('auth-user').value.trim();
       const pass = document.getElementById('auth-pass').value.trim();
-      if(!user || !pass) return alert("Please enter both a username and password.");
+      if(!user || !pass) return alert("Please enter both!");
       
       localStorage.setItem('wars_user', user);
       localStorage.setItem('wars_pass', pass);
@@ -345,27 +340,44 @@
       document.getElementById('auth-overlay').style.display = 'none';
       document.getElementById('app-container').style.display = 'flex';
       
-      document.getElementById('sidebar-name').textContent = currentUser;
-      document.getElementById('sidebar-avatar').textContent = currentUser.charAt(0).toUpperCase();
       document.getElementById('set-user').textContent = currentUser;
       document.getElementById('set-pass').textContent = currentPass;
 
       loadPosts();
-      
-      // Start Slider
       setInterval(nextSlide, 4000);
       
-      // Show Easter Egg randomly after 5 seconds
-      setTimeout(() => document.getElementById('easter-flower').classList.add('show'), 5000);
+      // Reveal the secret block after 8 seconds
+      setTimeout(() => {
+        const block = document.getElementById('secret-block');
+        block.style.bottom = '20px';
+        block.style.transform = 'rotate(15deg)';
+      }, 8000);
     }
 
     if(currentUser && currentPass) initApp();
 
-    // --- SETTINGS ---
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
-    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+    // --- INTERACTIVITY: LOGO SPIN ---
+    function spinLogo() {
+      logoClicks++;
+      const logo = document.querySelector('.logo-btn');
+      logo.style.transform = `rotate(${logoClicks * 90}deg)`;
+      
+      if(logoClicks >= 5) {
+        fireConfetti();
+        logoClicks = 0;
+        setTimeout(() => logo.style.transform = 'rotate(0deg)', 1000);
+      }
+    }
 
-    // --- CHANNELS ---
+    // --- INTERACTIVITY: SECRET BLOCK ---
+    function activateSuperSecret() {
+      const block = document.getElementById('secret-block');
+      block.style.bottom = '-100px';
+      alert("🧱 You found the lost block! The universe is balanced.");
+      fireConfetti();
+    }
+
+    // --- CHANNELS & POSTS ---
     let currentChannel = 'announcements';
     const channelNames = {
       'announcements': '📢 Announcements',
@@ -381,51 +393,26 @@
       document.querySelector(`.channel[data-channel="${channel}"]`).classList.add('active');
       document.getElementById('channel-title').textContent = channelNames[channel];
       
-      // Only show slider on announcements
       document.getElementById('main-slider').style.display = channel === 'announcements' ? 'block' : 'none';
-      
-      // Don't let users post in announcements
-      document.getElementById('post-form').style.display = channel === 'announcements' ? 'none' : 'block';
+      document.getElementById('post-form').style.display = channel === 'announcements' ? 'none' : 'flex';
       
       loadPosts();
     }
 
-    // --- SLIDER ---
-    let slideIndex = 0;
-    function nextSlide() {
-      const slides = document.querySelectorAll('.slide');
-      if(slides.length === 0) return;
-      slides[slideIndex].classList.remove('active');
-      slideIndex = (slideIndex + 1) % slides.length;
-      slides[slideIndex].classList.add('active');
-    }
-
-    // --- POSTS & INTERACTIONS ---
-    const pastelColors = ['#FF9F9F', '#FFC89F', '#FFE79F', '#C4FF9F', '#9FFFE0', '#9FC4FF', '#C89FFF', '#FF9FE0'];
-    function getAvatarColor(name) {
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      return pastelColors[Math.abs(hash) % pastelColors.length];
-    }
-
     async function loadPosts() {
       const container = document.getElementById('feed-container');
-      const loading = document.getElementById('loadingText');
-      loading.style.display = 'block';
       container.innerHTML = '<p id="loadingText">Loading...</p>';
       
       try {
-        // Map channel to DB tag
         let tagFilter = '';
         if(currentChannel === 'guides') tagFilter = 'Guide';
         if(currentChannel === 'lfg') tagFilter = 'LFG';
         if(currentChannel === 'bugs') tagFilter = 'Bug Report';
         if(currentChannel === 'general') tagFilter = 'General';
-        
+        if(currentChannel === 'announcements') tagFilter = 'Announcement';
+
         let query = _supabase.from('posts').select('*').order('created_at', { ascending: false });
         if(tagFilter) query = query.eq('tag', tagFilter);
-        // Announcements pulls Admin posts
-        if(currentChannel === 'announcements') query = query.eq('tag', 'Announcement');
 
         const { data, error } = await query;
         if(error) throw error;
@@ -433,7 +420,7 @@
         container.innerHTML = '';
         
         if(data.length === 0) {
-          container.innerHTML = '<p style="color:var(--text-muted); font-weight:600;">No posts here yet. Start the conversation!</p>';
+          container.innerHTML = '<p style="color:var(--text-muted); font-weight:600; text-align:center; margin-top:20px;">No messages here yet. Say hi!</p>';
           return;
         }
 
@@ -445,8 +432,6 @@
           const date = new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
           const initial = post.username.charAt(0).toUpperCase();
           const avatarBg = getAvatarColor(post.username);
-          
-          // Handle comments safely
           const comments = post.comments || [];
           const commentsHtml = comments.map(c => `
             <div class="comment-item">
@@ -468,23 +453,21 @@
             <div class="post-content">${escapeHTML(post.message)}</div>
             
             <div class="post-actions">
-              <button class="action-btn ${post.likes > 0 ? 'liked' : ''}" onclick="react('${post.id}', 'likes')">
+              <button class="action-btn ${post.likes > 0 ? 'liked' : ''}" onclick="react(this, '${post.id}', 'likes')">
                 👍 <span id="likes-${post.id}">${post.likes || 0}</span>
               </button>
-              <button class="action-btn ${post.dislikes > 0 ? 'disliked' : ''}" onclick="react('${post.id}', 'dislikes')">
+              <button class="action-btn ${post.dislikes > 0 ? 'disliked' : ''}" onclick="react(this, '${post.id}', 'dislikes')">
                 👎 <span id="dislikes-${post.id}">${post.dislikes || 0}</span>
               </button>
               <button class="action-btn" onclick="toggleComments('${post.id}')">
-                💬 Comments (${comments.length})
+                💬 (${comments.length})
               </button>
             </div>
 
             <div class="comments-section" id="comments-${post.id}">
-              <div class="comment-list" id="comment-list-${post.id}">
-                ${commentsHtml}
-              </div>
+              <div class="comment-list" id="comment-list-${post.id}">${commentsHtml}</div>
               <div class="comment-input-area">
-                <input type="text" id="comment-input-${post.id}" placeholder="Write a comment...">
+                <input type="text" id="comment-input-${post.id}" placeholder="Reply...">
                 <button onclick="addComment('${post.id}')">Send</button>
               </div>
             </div>
@@ -492,13 +475,13 @@
           container.appendChild(card);
         });
       } catch (err) {
-        console.error(err);
-        container.innerHTML = '<p style="color:red;">Error loading posts. Make sure SQL columns exist.</p>';
+        container.innerHTML = '<p style="color:red;">Error. Check database.</p>';
       }
     }
 
     async function submitPost() {
-      const msg = document.getElementById('post-message').value.trim();
+      const input = document.getElementById('post-message');
+      const msg = input.value.trim();
       if(!msg) return;
       
       let tag = 'General';
@@ -508,44 +491,30 @@
 
       try {
         const { error } = await _supabase.from('posts').insert([{
-          username: currentUser,
-          tag: tag,
-          message: msg,
-          likes: 0,
-          dislikes: 0,
-          comments: []
+          username: currentUser, tag: tag, message: msg, likes: 0, dislikes: 0, comments: []
         }]);
         if(error) throw error;
-        document.getElementById('post-message').value = '';
+        input.value = '';
+        fireConfetti(); // Confetti on post!
         loadPosts();
-      } catch (err) {
-        alert("Error posting: " + err.message);
-      }
+      } catch (err) { alert("Error: " + err.message); }
     }
 
-    async function react(id, type) {
-      // Simple increment logic (Not full proof for double-liking without full auth, but works for now)
-      const btn = event.target.closest('button');
+    async function react(btn, id, type) {
       const numEl = document.getElementById(`${type}-${id}`);
       let current = parseInt(numEl.textContent) || 0;
-      
-      // Optimistic UI update
       numEl.textContent = current + 1;
       btn.classList.add(type === 'likes' ? 'liked' : 'disliked');
-
+      
       try {
-        await _supabase.rpc('increment_counter', { row_id: id, col_name: type }); // Requires SQL function
-        // Fallback if no RPC:
-        /*
         const { data } = await _supabase.from('posts').select(type).eq('id', id).single();
         await _supabase.from('posts').update({ [type]: data[type] + 1 }).eq('id', id);
-        */
-      } catch(e) { console.log("RPC failed, but UI updated."); }
+      } catch(e) { console.log("RPC failed, UI updated."); }
     }
 
     function toggleComments(id) {
       const sec = document.getElementById(`comments-${id}`);
-      sec.style.display = sec.style.display === 'none' || sec.style.display === '' ? 'block' : 'none';
+      sec.style.display = sec.style.display === 'block' ? 'none' : 'block';
     }
 
     async function addComment(id) {
@@ -554,44 +523,87 @@
       if(!text) return;
 
       try {
-        // Fetch current comments
         const { data, error } = await _supabase.from('posts').select('comments').eq('id', id).single();
         if(error) throw error;
         
         const existing = data.comments || [];
-        const newComment = { user: currentUser, text: text, time: new Date() };
-        existing.push(newComment);
+        existing.push({ user: currentUser, text: text });
 
-        // Update DB
         await _supabase.from('posts').update({ comments: existing }).eq('id', id);
         
-        // Update UI
         const list = document.getElementById(`comment-list-${id}`);
         const div = document.createElement('div');
         div.className = 'comment-item';
         div.innerHTML = `<div class="comment-author">${escapeHTML(currentUser)}</div><div class="comment-text">${escapeHTML(text)}</div>`;
         list.appendChild(div);
-        
         input.value = '';
-      } catch(err) {
-        alert("Error adding comment: " + err.message);
+      } catch(err) { alert("Error: " + err.message); }
+    }
+
+    // --- CONFETTI ENGINE ---
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+    function fireConfetti() {
+      for(let i=0; i<50; i++) {
+        particles.push({
+          x: window.innerWidth / 2, y: window.innerHeight / 2,
+          vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 1) * 20,
+          size: Math.random() * 8 + 4, color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
+          life: 1
+        });
       }
     }
 
-    // --- EASTER EGG ---
-    function hatchEgg() {
-      const pet = document.getElementById('silly-pet');
-      pet.style.display = 'block';
-      alert("🥚 You hatched a Silly Pet! It's a little lost block from another world.");
-      setTimeout(() => { pet.style.display = 'none'; }, 5000);
+    function updateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.02;
+        if(p.life <= 0) { particles.splice(i, 1); continue; }
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      }
+      requestAnimationFrame(updateConfetti);
+    }
+    updateConfetti();
+
+    // --- UTILS ---
+    const pastelColors = ['#FF9F9F', '#FFC89F', '#FFE79F', '#C4FF9F', '#9FFFE0', '#9FC4FF', '#C89FFF', '#FF9FE0'];
+    function getAvatarColor(name) {
+      let hash = 0; for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      return pastelColors[Math.abs(hash) % pastelColors.length];
+    }
+    function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+
+    // SLIDER
+    let slideIndex = 0;
+    function nextSlide() {
+      const slides = document.querySelectorAll('.slide');
+      if(slides.length === 0) return;
+      slides[slideIndex].classList.remove('active');
+      slideIndex = (slideIndex + 1) % slides.length;
+      slides[slideIndex].classList.add('active');
     }
 
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, 
-        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-      );
-    }
-
+    // CURSOR TRAIL
+    document.addEventListener('mousemove', (e) => {
+      if(Math.random() > 0.8) { // Spawns occasionally
+        const dot = document.createElement('div');
+        dot.className = 'trail-dot';
+        dot.style.left = e.clientX + 'px';
+        dot.style.top = e.clientY + 'px';
+        document.body.appendChild(dot);
+        setTimeout(() => { dot.style.opacity = '0'; setTimeout(() => dot.remove(), 500); }, 100);
+      }
+    });
   </script>
 </body>
 </html>
